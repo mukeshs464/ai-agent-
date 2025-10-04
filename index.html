@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Sentiment Alert Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fae8ff 50%, #fce7f3 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #9333ea 0%, #ec4899 100%);
+            color: white;
+            transition: width 0.3s ease;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        .sidebar.open {
+            width: 260px;
+        }
+
+        .sidebar.closed {
+            width: 80px;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-title {
+            font-size: 24px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-menu {
+            padding: 24px 12px;
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+            gap: 12px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+        }
+
+        .nav-text {
+            white-space: nowrap;
+            overflow: hidden;
+            font-weight: 500;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-bottom: 4px solid #9333ea;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-circle {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);
+        }
+
+        .header-info h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .header-info p {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            color: #4b5563;
+        }
+
+        .badge-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.3s;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1);
+        }
+
+        .content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(147, 51, 234, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            padding: 24px;
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-card.negative {
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+        }
+
+        .stat-card.neutral {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        }
+
+        .stat-card.positive {
+            background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .stat-change {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .platform-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: linear-gradient(135deg, #dbeafe 0%, #e9d5ff 100%);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+
+        .platform-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .platform-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .platform-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .platform-info h4 {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .platform-info p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .platform-sentiment {
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .sentiment-negative {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .sentiment-positive {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .alert-item {
+            padding: 20px;
+            background: linear-gradient(135deg, #fee2e2 0%, #fed7aa 100%);
+            border-left: 4px solid #dc2626;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .alert-customer {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .alert-platform {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .badge-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .alert-message {
+            color: #4b5563;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 12px 12px 44px;
+            border: 2px solid #e9d5ff;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            border: 2px solid #e9d5ff;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+
+        .alert-detail {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 16px;
+            transition: all 0.3s;
+            display: flex;
+            gap: 24px;
+        }
+
+        .alert-detail:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .alert-detail-main {
+            flex: 1;
+        }
+
+        .alert-detail-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .sentiment-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-top: 6px;
+        }
+
+        .sentiment-dot.negative {
+            background: #ef4444;
+        }
+
+        .sentiment-dot.neutral {
+            background: #fbbf24;
+        }
+
+        .sentiment-dot.positive {
+            background: #22c55e;
+        }
+
+        .alert-detail-info {
+            flex: 1;
+        }
+
+        .alert-detail-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .customer-name {
+            font-weight: 700;
+            font-size: 18px;
+            color: #1f2937;
+        }
+
+        .platform-tag {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .alert-detail-message {
+            color: #374151;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .alert-meta {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+
+        .recommendation-box {
+            background: linear-gradient(135deg, #dbeafe 0%, #e9d5ff 100%);
+            border-left: 4px solid #3b82f6;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .recommendation-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .recommendation-text {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .alert-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .btn-respond {
+            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+            color: white;
+        }
+
+        .btn-respond:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-resolve {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+        }
+
+        .btn-resolve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-view {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-view:hover {
+            background: #d1d5db;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .modal-body {
+            margin-bottom: 24px;
+        }
+
+        .modal-alert-info {
+            background: linear-gradient(135deg, #fae8ff 0%, #fce7f3 100%);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .response-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e9d5ff;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 120px;
+            margin-top: 16px;
+        }
+
+        .response-input:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #374151;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .monitor-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: linear-gradient(135deg, #dcfce7 0%, #dbeafe 100%);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .monitor-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .monitor-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .monitor-status {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .keywords-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .keyword-tag {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #fee2e2 0%, #fed7aa 100%);
+            color: #dc2626;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .channel-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: linear-gradient(135deg, #fae8ff 0%, #fce7f3 100%);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .channel-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-enabled {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: linear-gradient(135deg, #dbeafe 0%, #e9d5ff 100%);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .setting-input {
+            width: 100px;
+            padding: 8px 12px;
+            border: 2px solid #e9d5ff;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: #d1d5db;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .error {
+            color: #dc2626;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar.open {
+                width: 240px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .alert-detail {
+                flex-direction: column;
+            }
+
+            .alert-actions {
+                flex-direction: row;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar open" id="sidebar">
+            <div class="sidebar-header">
+                <h1 class="sidebar-title" id="sidebarTitle">SentinelAI</h1>
+                <button class="toggle-btn" id="toggleBtn">☰</button>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li class="nav-item">
+                    <a class="nav-link active" data-page="dashboard">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-page="alerts">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span class="nav-text">Active Alerts</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-page="monitoring">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        <span class="nav-text">Monitoring</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-page="analytics">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                        <span class="nav-text">Analytics</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-page="settings">
+                        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="nav-text">Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <div class="logo-circle">S</div>
+                        <div class="header-info">
+                            <h2>Customer Sentiment Monitor</h2>
+                            <p>Real-time sentiment tracking & alerts</p>
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <div class="notification-badge">
+                            <svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <span class="badge-count" id="notificationCount">0</span>
+                        </div>
+                        <div class="user-avatar">A</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <div id="dashboardPage" class="page-content">
+                    <div class="page-header">
+                        <h1 class="page-title">Sentiment Overview</h1>
+                        <button class="btn-primary">
+                            🔔 Configure Alerts
+                        </button>
+                    </div>
+
+                    <div class="stats-grid" id="statsGrid">
+                        <!-- Dynamically populated -->
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Platform Performance</h2>
+                        <div id="platformList"></div>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Critical Alerts (Last 24h)</h2>
+                        <div id="criticalAlerts"></div>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Sentiment Distribution (Today)</h2>
+                        <canvas id="sentimentPie"></canvas>
+                    </div>
+                </div>
+
+                <div id="alertsPage" class="page-content hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Active Alerts</h1>
+                    </div>
+
+                    <div class="controls">
+                        <div class="search-box">
+                            <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text" class="search-input" id="searchInput" placeholder="Search alerts...">
+                        </div>
+                        <select class="filter-select" id="sentimentFilter">
+                            <option value="all">All Sentiments</option>
+                            <option value="negative">Negative</option>
+                            <option value="neutral">Neutral</option>
+                            <option value="positive">Positive</option>
+                        </select>
+                    </div>
+
+                    <div id="alertsList"></div>
+                    <div id="alertsError" class="error hidden"></div>
+                </div>
+
+                <div id="monitoringPage" class="page-content hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Real-Time Monitoring</h1>
+                    </div>
+
+                    <div class="monitor-grid">
+                        <div class="card">
+                            <h2 class="card-title">Active Monitors</h2>
+                            <div id="monitorsList"></div>
+                        </div>
+
+                        <div class="card">
+                            <h2 class="card-title">Alert Channels</h2>
+                            <div id="channelsList"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Keywords & Triggers</h2>
+                        <div class="keywords-container" id="keywordsList"></div>
+                    </div>
+                </div>
+
+                <div id="analyticsPage" class="page-content hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Analytics & Insights</h1>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);">
+                            <p class="stat-label">Total Mentions</p>
+                            <p class="stat-value" id="totalMentions">0</p>
+                            <p class="stat-change" id="mentionsChange">+0%</p>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);">
+                            <p class="stat-label">Avg Response Time</p>
+                            <p class="stat-value">45m</p>
+                            <p class="stat-change">-8%</p>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);">
+                            <p class="stat-label">Resolution Rate</p>
+                            <p class="stat-value" id="resolutionRate">0%</p>
+                            <p class="stat-change" id="resolutionChange">+0%</p>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);">
+                            <p class="stat-label">Customer Satisfaction</p>
+                            <p class="stat-value">4.2/5</p>
+                            <p class="stat-change">+0.3</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Sentiment Trend (7 Days)</h2>
+                        <canvas id="sentimentLine" class="chart-container"></canvas>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Platform Mentions Breakdown</h2>
+                        <canvas id="platformBar" class="chart-container"></canvas>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Urgency Distribution</h2>
+                        <canvas id="urgencyDoughnut" class="chart-container"></canvas>
+                    </div>
+                </div>
+
+                <div id="settingsPage" class="page-content hidden">
+                    <div class="page-header">
+                        <h1 class="page-title">Settings</h1>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Alert Thresholds</h2>
+                        <div id="thresholdsList"></div>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title">Notification Preferences</h2>
+                        <div id="notificationsList"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="responseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Respond to Alert</h2>
+                <button class="close-btn" id="closeModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-alert-info" id="modalAlertInfo"></div>
+                <label style="font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">Your Response:</label>
+                <textarea class="response-input" id="responseText" placeholder="Type your response here..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="cancelBtn">Cancel</button>
+                <button class="btn-send" id="sendBtn">Send Response</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://localhost:8000/api';
+        let ws = null;
+        let allAlerts = [];  // Global alerts cache
+        let selectedAlert = null;
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let charts = {};  // Store chart instances for cleanup
+
+        // WebSocket for Real-Time Updates
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                updateNotificationCount();
+            };
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'newAlert') {
+                    allAlerts.unshift(data.data);
+                    updateNotificationCount();
+                    if (!document.getElementById('dashboardPage').classList.contains('hidden')) {
+                        renderCriticalAlerts();
+                        updateDashboardStats();
+                        renderSentimentPie();  // Refresh pie chart
+                    }
+                    if (!document.getElementById('alertsPage').classList.contains('hidden')) {
+                        renderAlerts();
+                    }
+                    if (!document.getElementById('analyticsPage').classList.contains('hidden')) {
+                        renderAnalytics();
+                    }
+                    // Toast for new alert
+                    showToast(`New ${data.data.urgency} alert from ${data.data.platform}: ${data.data.message.substring(0, 50)}...`);
+                }
+            };
+            ws.onclose = () => setTimeout(connectWebSocket, 3000); // Reconnect
+            ws.onerror = (error) => console.error('WebSocket error:', error);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed; top:20px; right:20px; background:#9333ea; color:white; padding:12px 20px; border-radius:12px; z-index:1001; font-weight:500;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function updateNotificationCount() {
+            const highPending = allAlerts.filter(a => a.urgency === 'high' && a.status === 'pending').length;
+            document.getElementById('notificationCount').textContent = highPending;
+        }
+
+        // API Fetch Helper
+        async function apiFetch(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    ...options,
+                    headers: { 'Content-Type': 'application/json', ...options.headers }
+                });
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        // Load Alerts
+        async function loadAlerts() {
+            try {
+                allAlerts = await apiFetch(`/alerts?sentiment=${currentFilter}&search=${encodeURIComponent(searchQuery)}`);
+                updateNotificationCount();
+            } catch (error) {
+                document.getElementById('alertsError').textContent = 'Failed to load alerts: ' + error.message;
+                document.getElementById('alertsError').classList.remove('hidden');
+            }
+        }
+
+        // Update Dashboard Stats from Alerts
+        function updateDashboardStats() {
+            const negative = allAlerts.filter(a => a.sentiment === 'negative').length;
+            const neutral = allAlerts.filter(a => a.sentiment === 'neutral').length;
+            const positive = allAlerts.filter(a => a.sentiment === 'positive').length;
+            const total = allAlerts.length;
+            const negPct = total ? Math.round((negative / total) * 100) : 0;
+            const neuPct = total ? Math.round((neutral / total) * 100) : 0;
+            const posPct = total ? Math.round((positive / total) * 100) : 0;
+
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card negative">
+                    <p class="stat-label">Negative Sentiment</p>
+                    <p class="stat-value">${negPct}%</p>
+                    <p class="stat-change">${negative > 0 ? '↑ New' : '→ Stable'}</p>
+                </div>
+                <div class="stat-card neutral">
+                    <p class="stat-label">Neutral Sentiment</p>
+                    <p class="stat-value">${neuPct}%</p>
+                    <p class="stat-change">→ No change</p>
+                </div>
+                <div class="stat-card positive">
+                    <p class="stat-label">Positive Sentiment</p>
+                    <p class="stat-value">${posPct}%</p>
+                    <p class="stat-change">${positive > 0 ? '↓ Monitor' : '→ Stable'}</p>
+                </div>
+            `;
+        }
+
+        // Render Platforms
+        async function renderPlatforms() {
+            try {
+                const platforms = await apiFetch('/platforms');
+                const container = document.getElementById('platformList');
+                container.innerHTML = platforms.map(platform => `
+                    <div class="platform-item">
+                        <div class="platform-left">
+                            <div class="platform-icon">${platform.name[0]}</div>
+                            <div class="platform-info">
+                                <h4>${platform.name}</h4>
+                                <p>${platform.mentions} mentions</p>
+                            </div>
+                        </div>
+                        <div class="platform-sentiment ${platform.sentiment_avg < 0 ? 'sentiment-negative' : 'sentiment-positive'}">
+                            ${platform.sentiment_avg > 0 ? '+' : ''}${Math.round(platform.sentiment_avg)}%
+                        </div>
+                    </div>
+                `).join('') || '<p>No platforms data available.</p>';
+            } catch (error) {
+                document.getElementById('platformList').innerHTML = '<p>Error loading platforms.</p>';
+            }
+        }
+
+        // Render Critical Alerts
+        async function renderCriticalAlerts() {
+            try {
+                const criticalAlerts = await apiFetch('/critical-alerts');
+                const container = document.getElementById('criticalAlerts');
+                container.innerHTML = criticalAlerts.map(alert => `
+                    <div class="alert-item">
+                        <div class="alert-header">
+                            <span class="alert-customer">${alert.customer}</span>
+                            <span class="alert-platform">• ${alert.platform}</span>
+                            <span class="badge badge-high">${alert.urgency.toUpperCase()}</span>
+                        </div>
+                        <p class="alert-message">${alert.message}</p>
+                        <p class="alert-time">${new Date(alert.timestamp).toLocaleString()}</p>
+                    </div>
+                `).join('') || '<p>No critical alerts.</p>';
+            } catch (error) {
+                document.getElementById('criticalAlerts').innerHTML = '<p>Error loading critical alerts.</p>';
+            }
+        }
+
+        // Render Alerts
+        function renderAlerts() {
+            const container = document.getElementById('alertsList');
+            const filtered = allAlerts.filter(alert => {
+                const matchesSentiment = currentFilter === 'all' || alert.sentiment === currentFilter;
+                const matchesSearch = alert.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                     alert.message.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesSentiment && matchesSearch;
+            });
+            
+            container.innerHTML = filtered.map(alert => `
+                <div class="alert-detail">
+                    <div class="alert-detail-main">
+                        <div class="alert-detail-header">
+                            <div class="sentiment-dot ${alert.sentiment}"></div>
+                            <div class="alert-detail-info">
+                                <div class="alert-detail-top">
+                                    <span class="customer-name">${alert.customer}</span>
+                                    <span class="platform-tag">via ${alert.platform}</span>
+                                    <span class="badge badge-high">${alert.urgency.toUpperCase()}</span>
+                                    ${alert.status === 'resolved' ? '<span class="badge" style="background: #dcfce7; color: #16a34a;">RESOLVED</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <p class="alert-detail-message">${alert.message}</p>
+                        <div class="alert-meta">
+                            <span>🕐 ${new Date(alert.timestamp).toLocaleString()}</span>
+                            <span>Reach: ${alert.reach.toLocaleString()}</span>
+                            <span>Engagement: ${alert.engagement}</span>
+                        </div>
+                        <div class="recommendation-box">
+                            <p class="recommendation-label">AI Recommended Response:</p>
+                            <p class="recommendation-text">${alert.recommended_response}</p>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        ${alert.status !== 'resolved' ? `
+                            <button class="btn btn-respond" onclick="openModal(${alert.id})">📤 Respond</button>
+                            <button class="btn btn-resolve" onclick="resolveAlert(${alert.id})">✓ Resolve</button>
+                        ` : ''}
+                        <button class="btn btn-view">🔗 View Source</button>
+                    </div>
+                </div>
+            `).join('') || '<p>No alerts match the filter.</p>';
+        }
+
+        // Render Monitoring (Static for now)
+        function renderMonitoring() {
+            document.getElementById('monitorsList').innerHTML = `
+                <div class="monitor-item">
+                    <div class="monitor-left">
+                        <div class="status-dot"></div>
+                        <span class="monitor-name">Twitter #brand</span>
+                    </div>
+                    <span class="monitor-status">Active</span>
+                </div>
+            `;
+            document.getElementById('channelsList').innerHTML = `
+                <div class="channel-item">
+                    <span class="channel-name">Slack #support</span>
+                    <span class="status-badge status-connected">Connected</span>
+                </div>
+            `;
+            document.getElementById('keywordsList').innerHTML = `
+                <span class="keyword-tag">refund</span>
+                <span class="keyword-tag">broken</span>
+            `;
+        }
+
+        // Render Analytics with Multiple Charts
+        async function renderAnalytics() {
+            try {
+                // Total mentions from platforms
+                const platforms = await apiFetch('/platforms');
+                const totalMentions = platforms.reduce((sum, p) => sum + p.mentions, 0);
+                document.getElementById('totalMentions').textContent = totalMentions;
+
+                // Resolution rate
+                const resolved = allAlerts.filter(a => a.status === 'resolved').length;
+                const resolutionRate = allAlerts.length ? Math.round((resolved / allAlerts.length) * 100) : 0;
+                document.getElementById('resolutionRate').textContent = resolutionRate + '%';
+
+                // Sentiment Trend Line Chart
+                const trend = await apiFetch('/analytics/trend?days=7');
+                const ctxLine = document.getElementById('sentimentLine').getContext('2d');
+                if (charts.sentimentLine) charts.sentimentLine.destroy();
+                charts.sentimentLine = new Chart(ctxLine, {
+                    type: 'line',
+                    data: {
+                        labels: trend.dates,
+                        datasets: [{
+                            label: 'Sentiment Score',
+                            data: trend.sentiments,
+                            borderColor: '#9333ea',
+                            backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true, max: 1 }
+                        }
+                    }
+                });
+
+                // Platform Mentions Bar Chart
+                const ctxBar = document.getElementById('platformBar').getContext('2d');
+                if (charts.platformBar) charts.platformBar.destroy();
+                charts.platformBar = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: platforms.map(p => p.name),
+                        datasets: [{
+                            label: 'Mentions',
+                            data: platforms.map(p => p.mentions),
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+
+                // Urgency Distribution Doughnut Chart
+                const urgencyCounts = allAlerts.reduce((acc, a) => {
+                    acc[a.urgency] = (acc[a.urgency] || 0) + 1;
+                    return acc;
+                }, {});
+                const ctxDoughnut = document.getElementById('urgencyDoughnut').getContext('2d');
+                if (charts.urgencyDoughnut) charts.urgencyDoughnut.destroy();
+                charts.urgencyDoughnut = new Chart(ctxDoughnut, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(urgencyCounts),
+                        datasets: [{
+                            data: Object.values(urgencyCounts),
+                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981']
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            } catch (error) {
+                console.error('Analytics error:', error);
+                document.getElementById('chartContainer').innerHTML = '<p>Error loading analytics.</p>';
+            }
+        }
+
+        // Render Sentiment Pie Chart on Dashboard
+        function renderSentimentPie() {
+            const negative = allAlerts.filter(a => a.sentiment === 'negative').length;
+            const neutral = allAlerts.filter(a => a.sentiment === 'neutral').length;
+            const positive = allAlerts.filter(a => a.sentiment === 'positive').length;
+            const ctxPie = document.getElementById('sentimentPie').getContext('2d');
+            if (charts.sentimentPie) charts.sentimentPie.destroy();
+            charts.sentimentPie = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: ['Negative', 'Neutral', 'Positive'],
+                    datasets: [{
+                        data: [negative, neutral, positive],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+
+        // Render Settings (Static for now)
+        function renderSettings() {
+            document.getElementById('thresholdsList').innerHTML = `
+                <div class="setting-item">
+                    <span class="setting-label">High Priority Threshold</span>
+                    <input type="text" class="setting-input" value="85">
+                </div>
+            `;
+            document.getElementById('notificationsList').innerHTML = `
+                <div class="setting-item">
+                    <span class="setting-label">Instant Slack alerts for critical issues</span>
+                    <div class="toggle-switch active" onclick="toggleSwitch(this)">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Modal Functions
+        function openModal(alertId) {
+            selectedAlert = allAlerts.find(a => a.id === alertId);
+            if (selectedAlert) {
+                document.getElementById('modalAlertInfo').innerHTML = `
+                    <p style="font-weight: 600; margin-bottom: 8px;">${selectedAlert.customer} • ${selectedAlert.platform}</p>
+                    <p style="color: #6b7280;">${selectedAlert.message}</p>
+                `;
+                document.getElementById('responseText').value = selectedAlert.recommended_response || '';
+                document.getElementById('responseModal').classList.add('active');
+            }
+        }
+
+        async function sendResponse(alertId) {
+            const responseText = document.getElementById('responseText').value;
+            if (!responseText) return alert('Please enter a response.');
+            try {
+                await apiFetch(`/alerts/${alertId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ status: 'resolved', response_text: responseText })
+                });
+                alert('Response sent and alert resolved!');
+                closeModal();
+                loadAlerts();  // Refresh
+                if (!document.getElementById('alertsPage').classList.contains('hidden')) renderAlerts();
+            } catch (error) {
+                alert('Error sending response: ' + error.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('responseModal').classList.remove('active');
+            selectedAlert = null;
+            document.getElementById('responseText').value = '';
+        }
+
+        async function resolveAlert(alertId) {
+            try {
+                await apiFetch(`/alerts/${alertId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ status: 'resolved' })
+                });
+                loadAlerts();  // Refresh
+                renderAlerts();
+                updateNotificationCount();
+            } catch (error) {
+                alert('Error resolving alert: ' + error.message);
+            }
+        }
+
+        function toggleSwitch(element) {
+            element.classList.toggle('active');
+        }
+
+        // Navigation
+        document.getElementById('toggleBtn').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+            sidebar.classList.toggle('closed');
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', async function() {
+                const page = this.getAttribute('data-page');
+                showPage(page);
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        function showPage(pageName) {
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(pageName + 'Page').classList.remove('hidden');
+            
+            if (pageName === 'dashboard') {
+                updateDashboardStats();
+                renderPlatforms();
+                renderCriticalAlerts();
+                renderSentimentPie();  // Render pie on dashboard
+            } else if (pageName === 'alerts') {
+                loadAlerts().then(renderAlerts);
+            } else if (pageName === 'monitoring') {
+                renderMonitoring();
+            } else if (pageName === 'analytics') {
+                renderAnalytics();
+            } else if (pageName === 'settings') {
+                renderSettings();
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+        document.getElementById('cancelBtn').addEventListener('click', closeModal);
+        document.getElementById('sendBtn').addEventListener('click', () => sendResponse(selectedAlert.id));
+
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            searchQuery = e.target.value;
+            if (!document.getElementById('alertsPage').classList.contains('hidden')) {
+                loadAlerts().then(renderAlerts);
+            }
+        });
+
+        document.getElementById('sentimentFilter').addEventListener('change', function(e) {
+            currentFilter = e.target.value;
+            if (!document.getElementById('alertsPage').classList.contains('hidden')) {
+                loadAlerts().then(renderAlerts);
+            }
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            showPage('dashboard');  // Load dashboard by default
+        });
+    </script>
+</body>
+</html>
